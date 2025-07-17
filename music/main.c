@@ -126,27 +126,28 @@ void dds()
   {
     j=0;
     i++;
-    if (pgm_read_word(&notes[i][0])==-2)
-    {
-      //Timer1.detachInterrupt();
-      if (repeat == 0) {
-          i-=64;
-          repeat = 1;
-      } else {
-          i++;
-          repeat = 0;
-      }
-    }
-    if (pgm_read_word(&notes[i][0])==-1)
-    {
-      //Timer1.detachInterrupt();
-      i=0;
-    }
+    int16_t main_note = pgm_read_word(&notes[i][0]);
+//    if (pgm_read_word(&notes[i][0])==-2)
+//    {
+//      //Timer1.detachInterrupt();
+//      if (repeat == 0) {
+//          i-=64;
+//          repeat = 1;
+//      } else {
+//          i++;
+//          repeat = 0;
+//      }
+//    }
+//    if (pgm_read_word(&notes[i][0])==-1)
+//    {
+//      //Timer1.detachInterrupt();
+//      i=0;
+//    }
     uint32_t foo=pgm_read_word(&notes[i][0])*134213;
-    if (foo > 0)
+    if (main_note > 0)
     {
         dds1_add=foo;
-    } else if (foo < 0) {
+    } else if (main_note < 0) {
         dds1_add=0;
     }
     //if (dds1_add==0)
