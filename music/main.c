@@ -9,8 +9,8 @@
 #include <avr/power.h>
 
 #define TONE_LENGTH 1980
-#define GAP1 1200
-#define GAP2 500
+#define GAP1 900
+#define GAP2 100
 
 #include "notes___.h"
 
