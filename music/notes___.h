@@ -504,6 +504,7 @@ const int16_t PROGMEM notes[][3]={
     {NOTE_G6,    0,          0,},
     {NOTE_C7,    NOTE_E3,    0,},
     {NOTE_C6,    0,          0,},
+    {-1,    0,          0,},
 
 
 
