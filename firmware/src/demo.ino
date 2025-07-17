@@ -1,33 +1,39 @@
 #include <avr/pgmspace.h>
 
-#include "../../gfx/nem.h"
+#include "../../gfx/manmade.h"
+#include "../../gfx/arduino.h"
 
 #define PLASMA_LEN 600
 
 // -----------------------------
 // |          FAST SIN/COS     |
 // -----------------------------
-int8_t sinTable[17];
+int8_t sinTable[33];
+static const uint8_t isq[] PROGMEM = {
+
+255, 248, 241, 234, 228, 223, 218, 213, 209, 204, 200, 197, 193, 190, 186, 183, 181, 178, 175, 173, 170, 168, 166, 163, 161, 159, 158, 156, 154, 152, 150, 149, 147, 146, 144, 143, 142, 140, 139, 138, 136, 135, 134, 133, 132, 131, 130, 129, 128, 127, 126, 125, 124, 123, 122, 121, 120, 119, 119, 118, 117, 116, 115, 115, 114, 113, 113, 112, 111, 111, 110, 109, 109, 108, 107, 107, 106, 106, 105, 105, 104, 103, 103, 102, 102, 101, 101, 100, 100, 99, 99, 98, 98, 98, 97, 97, 96, 96, 95, 95, 95, 94, 94, 93, 93, 93, 92, 92, 91, 91, 91, 90, 90, 90, 89, 89, 89, 88, 88, 88, 87, 87, 87, 86, 86, 86, 85, 85, 85, 85, 84, 84, 84, 83, 83, 83, 83, 82, 82, 82, 81, 81, 81, 81, 80, 80, 80, 80, 79, 79, 79, 79, 79, 78, 78, 78, 78, 77, 77, 77, 77, 76, 76, 76, 76, 76, 75, 75, 75, 75, 75, 74, 74, 74, 74, 74, 73, 73, 73, 73, 73, 72, 72, 72, 72, 72, 72, 71, 71, 71, 71, 71, 71, 70, 70, 70, 70, 70, 69, 69, 69, 69, 69, 69, 69, 68, 68, 68, 68, 68, 68, 67, 67, 67, 67, 67, 67, 67, 66, 66, 66, 66, 66, 66, 66, 65, 65, 65, 65, 65, 65, 65, 65, 64, 64, 64, 64, 64, 64, 64, 64, 63, 63, 63, 63, 63, 63, 63, 63, 62, 62, 62, 62, 62, 62, 62, 62, 61, 61, 61, 61, 61, 61, 61, 61, 61, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
+};
+
 uint16_t fct=0;
 
-int8_t fs(uint8_t a) //Full wave: 0..63, values: -127..127
+int8_t fs(uint8_t a) //Full wave: 0..127, values: -127..127
 {
   uint8_t n;
+  a&=127;
+  n=(a>=64);
   a&=63;
-  n=(a>=32);
-  a&=31;
-  a=(a<=16)?a:32-a;
+  a=(a<=32)?a:64-a;
   return n?-sinTable[a]:sinTable[a];
 }
 
 int8_t fc(uint8_t a)
 {
   uint8_t n;
-  a+=16;
+  a+=32;
+  a&=127;
+  n=(a>=64);
   a&=63;
-  n=(a>=32);
-  a&=31;
-  a=(a<=16)?a:32-a;
+  a=(a<=32)?a:64-a;
   return n?-sinTable[a]:sinTable[a];
 }
 
@@ -39,7 +45,7 @@ int8_t fc(uint8_t a)
 #define FASTLED_RAND16_13849 ((uint16_t)(13849))
 uint16_t rand16seed;
 
-uint8_t random8()
+inline uint8_t random8()
 {
   rand16seed = (rand16seed * FASTLED_RAND16_2053) + FASTLED_RAND16_13849;
   // return the sum of the high and low bytes, for better
@@ -48,7 +54,16 @@ uint8_t random8()
                    ((uint8_t)(rand16seed >> 8)));
 }
 
-uint16_t random16()
+inline uint8_t random8b()
+{
+  rand16seed = (rand16seed * FASTLED_RAND16_2053) + FASTLED_RAND16_13849;
+  // return the sum of the high and low bytes, for better
+  //  mixing and non-sequential correlation
+  return (uint8_t)(((uint8_t)(rand16seed & 0xFF)) &
+                   ((uint8_t)(rand16seed >> 8)));
+}
+
+inline uint16_t random16()
 {
   rand16seed = (rand16seed * FASTLED_RAND16_2053) + FASTLED_RAND16_13849;
   return rand16seed;
@@ -280,7 +295,7 @@ unsigned char temp[8];
 // -----------------------------
 // |          PLASMA           |
 // -----------------------------
-void plasma()
+void plasma(uint8_t ver)
 {
   static uint16_t psp=0;
   static uint8_t pbias=255;
@@ -312,12 +327,33 @@ void plasma()
     oledSetPosition(2, y >> 3);
     for (x=0; x<128; x+=4)
     {
-      x2=((int16_t)fc(a)*x-(int16_t)fs(a)*(y+4))/128;
-      x3=((int16_t)fc(a)*x-(int16_t)fs(a)*y)/128;
-      y2=((int16_t)fs(a)*x+(int16_t)fc(a)*(y+4))/128;
-      y3=((int16_t)fs(a)*x+(int16_t)fc(a)*(y))/128;
-      v1=((int16_t)fs(x2*0.7+psp*0.5+fs(y2-9)/11)+fs(y2+psp+fs(x2+41)/8))*3/2;
-      v2=((int16_t)fs(x3*0.7+psp*0.5+fs(y3-9)/11)+fs(y3+psp+fs(x3+41)/8))*3/2;
+      if (ver == 0)
+      {
+        x2=((int16_t)fc(a)*x-(int16_t)fs(a)*(y+4))/128;
+        x3=((int16_t)fc(a)*x-(int16_t)fs(a)*y)/128;
+        y2=((int16_t)fs(a)*x+(int16_t)fc(a)*(y+4))/128;
+        y3=((int16_t)fs(a)*x+(int16_t)fc(a)*(y))/128;
+        v1=((int16_t)fs(x2*1.7+psp*0.3+fs(y2*2+15+psp)/15)+fs(y2-psp+fs(x2+41)/123))*3/2;
+        v2=((int16_t)fs(x3*1.7+psp*0.3+fs(y3*2+15+psp)/15)+fs(y3-psp+fs(x3+41)/123))*3/2;
+      }
+      else if (ver == 1)
+      {
+        x2=((int16_t)fc(a)*x-(int16_t)fs(a)*(y+4))/128;
+        x3=((int16_t)fc(a)*x-(int16_t)fs(a)*y)/128;
+        y2=((int16_t)fs(a)*x+(int16_t)fc(a)*(y+4))/128;
+        y3=((int16_t)fs(a)*x+(int16_t)fc(a)*(y))/128;
+        v1=((int16_t)fs(fs(y2)+x2*1.7+psp*0.3+fs(y2*2+15+psp)/15)+fs(y2-psp+fs(x2+41)/123))*3/2;
+        v2=((int16_t)fs(fs(y3)+x3*1.7+psp*0.3+fs(y3*2+15+psp)/15)+fs(y3-psp+fs(x3+41)/123))*3/2;
+      }
+      else if (ver == 2)
+      {
+        x2=((int16_t)fc(a)*x-(int16_t)fs(a)*(y+4))/128;
+        x3=((int16_t)fc(a)*x-(int16_t)fs(a)*y)/128;
+        y2=((int16_t)fs(a)*x+(int16_t)fc(a)*(y+4))/128;
+        y3=((int16_t)fs(a)*x+(int16_t)fc(a)*(y))/128;
+        v1=((int16_t)fs(fs(y2)+x2*1.7+psp*0.3+fs(y2*2+15+psp)/15)+fs(y2-psp+fs(x2+41)/123))*3/2;
+        v2=((int16_t)fs(fs(y3)+x3*1.7+psp*0.3+fs(y3*2+15+psp)/15)+fs(y3-psp+fs(x3+41)/123))*3/2;
+      }
     
       if (v1<0)
       {
@@ -392,27 +428,28 @@ void setup()
   delay(200); // wait for the OLED to fully power up
   oledInit(0x3c, 0, 0);
   uint8_t i;
-  for (i=0; i<=16; i++)
+  for (i=0; i<=32; i++)
   {
-    sinTable[i]=sin(i/16.0*M_PI/2)*127;
+    sinTable[i]=sin(i/32.0*M_PI/2)*127;
   }
 }
 
-void nem_eff()
+void text_eff(void* gfx, uint8_t intensity, uint8_t randomness)
 {
   int16_t of = 0;
   rand16seed=fct;
+  uint16_t rn = (uint16_t)randomness * 8;
   uint8_t x, y;
   uint8_t buf[16];
   uint16_t ro=random16();
-  if (ro < 4000)
+  if (ro < 5*rn)
   {
-    of = ro % 71 - 35;
+    of = ro % randomness - (randomness >> 1);
   }
   for (y=0; y<8; y++)
   {
     uint16_t rr=random16();
-    oledSetPosition(2 + (rr < 20000) + (rr < 40000) + (rr < 50000), y);
+    oledSetPosition(2 + (rr < 20*rn) + (rr < 40*rn) + (rr < 50*rn), y);
     for (x=0; x<128; x++)
     {
       uint8_t p;
@@ -423,12 +460,18 @@ void nem_eff()
       buf[0] = 0;
       for (ys=0; ys<8; ys++)
       {
-        p = pgm_read_byte(nem + of + y * 128 + ys * 16 + x / 8);
-        buf[0] |= (p & (1<<bp)) ? (1 << ys) : 0;
+        p = pgm_read_byte(gfx + of + y * 128 + ys * 16 + x / 8);
+        if (intensity > (random8() >> 1))
+        {
+          buf[0] |= (p & (1<<bp)) ? (1 << ys) : 0;
+        }
       }
       uint16_t rnd=random16();
-      buf[0] &= ((rnd&0xff) & (rnd >> 8));
-      if (rnd > 10000) oledWriteDataBlock(buf, 1);
+      if (intensity > (random8() >> 1) + 127)
+      {
+        buf[0] &= ((rnd&0xff) ^ (rnd >> 8));
+      }
+      if (rnd > rn*12) oledWriteDataBlock(buf, 1);
     }
   }
 }
@@ -479,8 +522,175 @@ void wtf()
       oledWriteDataBlock(buf, 1);
     }
   }
+}
 
+void wtf2()
+{
+  uint8_t x, ym;
+  uint8_t a, b;
 
+  for (ym=0; ym<4; ym++)
+  {
+    uint16_t rr=random16();
+    for (x=0; x<128; x++)
+    {
+      uint8_t p;
+      uint8_t b = 0;
+      uint8_t bp;
+      bp = x & 7;
+      uint8_t ys;
+      a = 0;
+      b = 0;
+      for (ys=0; ys<8; ys++)
+      {
+        uint8_t y = ym * 8 + ys;
+        
+        uint16_t dsq = (x - 63) * (x - 63) + (y - 31) * (y - 31);
+        //uint16_t dsq = (x - 30) * (x - 30) + (y - 14) * (y - 14)
+        //            + (x - 97) * (x - 97) + (y - 48) * (y - 48);
+        uint8_t dd = dsq % (fct + 20);
+        if (dd < 10)
+        {
+          a |= (1 << ys);
+          b |= (128 >> ys);
+        }
+      }
+      oledSetPosition(2 + x, ym);
+      oledWriteDataBlock(&a, 1);
+      oledSetPosition(2 + x, 7 - ym);
+      oledWriteDataBlock(&b, 1);
+    }
+  }
+}
+
+inline uint8_t invsqr(uint16_t x)
+{
+  //return 1024/sqrt(x);
+  if (x < 16)
+  {
+    return 255;
+  }
+  else if (x >= 400)
+  {
+    return invsqr(x >> 2) >> 1;
+    //return invsqr(x >> 4) >> 2;
+    //return 58 - (x >> 6);
+  }
+  else
+  {
+    //return 405 - 0.8858*x;
+    return pgm_read_byte(isq + ((x - 16) >> 1));
+  }
+}
+
+void blob()
+{
+//#define TH1 48
+//#define TH2 53
+//#define TH3 57
+//#define TH4 62
+#define TH1 61
+#define TH2 (72-5)
+#define TH3 (72+5)
+#define TH4 88
+  uint8_t x1 = 30, y1 = 6, x2 = fct & 127, y2 = 40;
+
+  uint8_t x, ym;
+  uint8_t buf[16];
+
+  for (ym=0; ym<8; ym++)
+  {
+    uint16_t rr=random16();
+    oledSetPosition(2, ym);
+    for (x=0; x<128; x+=4)
+    {
+      uint8_t p;
+      uint8_t b = 0;
+      uint8_t bp;
+      bp = x & 7;
+      uint8_t ys;
+      buf[0] = 0;
+      uint8_t y = ym * 8;
+
+      uint16_t dsq1;
+      uint16_t dsq2;
+      
+      dsq1 = (x - x1) * (x - x1) + (y - y1) * (y - y1);
+      dsq2 = (x - x2) * (x - x2) + (y - y2) * (y - y2);
+      int16_t dsqa = invsqr(dsq1) + invsqr(dsq2);
+      //int16_t dsqa = 1024/sqrt(dsq1) + 1024/sqrt(dsq2);
+
+      y += 4;
+
+      dsq1 = (x - x1) * (x - x1) + (y - y1) * (y - y1);
+      dsq2 = (x - x2) * (x - x2) + (y - y2) * (y - y2);
+      int16_t dsqb = invsqr(dsq1) + invsqr(dsq2);
+      //int16_t dsqb = 1024/sqrt(dsq1) + 1024/sqrt(dsq2);
+
+        //buf[0] |= (dsq) ? (1 << ys) : 0;
+
+      uint8_t dsqp = 0, dsqq = 0;
+      uint8_t dsqv = 0, dsqw = 0;
+      if (dsqa > TH1 && dsqa < TH4)
+      {
+        dsqp = 15;
+        if (dsqa > TH2 && dsqa < TH3)
+        {
+          dsqv = 15;
+        }
+      }
+      if (dsqb > TH1 && dsqb < TH4)
+      {
+        dsqq = 15 * 16;
+        if (dsqb > TH2 && dsqb < TH3)
+        {
+          dsqw = 15 * 16;
+        }
+      }
+
+      uint8_t z = dsqp | dsqq;
+      uint8_t h = dsqv | dsqw;
+
+      uint16_t r = random16();
+
+      buf[0] = z & (uint8_t)r;
+      buf[0] &= (h | random8b());
+      buf[1] = z & (r >> 8);
+      buf[1] &= (h | random8b());
+
+      r = random16();
+      buf[2] = z & (uint8_t)r;
+      buf[2] &= (h | random8b());
+      buf[3] = z & (r >> 8);
+      buf[3] &= (h | random8b());
+
+      oledWriteDataBlock(buf, 4);
+    }
+  }
+}
+
+int ramp(int x, int s)
+{
+  if (x < s)
+  {
+    return 0;
+  }
+  else
+  {
+    return x - s;
+  }
+}
+
+int nramp(int x, int e)
+{
+  if (x > e)
+  {
+    return 0;
+  }
+  else
+  {
+    return e - x;
+  }
 }
 
 uint16_t nem_ctr = 0;
@@ -500,7 +710,64 @@ void loop()
 //  {
 //    plasma();
 //  }
-  wtf();
+//  plasma();
+//  if (fct < 512)
+//  {
+//    text_eff(tick, fct / 2);
+//  }
+//  else if (fct < 1024)
+//  {
+//    text_eff(never, 255-fct / 2);
+//  }
+//  else
+//  {
+//    uint8_t r = random8();
+//    if (r < 85)
+//    {
+//      text_eff(cpu1, r);
+//    }
+//    else if (r < 170)
+//    {
+//      text_eff(cpu2, r);
+//    }
+//    else
+//    {
+//      text_eff(cpu3, r);
+//    }
+//
+//  }
+//
+//  blob();
+//  plasma();
+//wtf2();
+//    text_eff(tick, fct);
+//    text_eff(cpu1, fct);
+//    text_eff(cpu2, fct);
+//    text_eff(cpu3, fct);
+//    text_eff(never, fct);
+//    blob();
+//    wtf2();
+//  plasma(0);
+  if (fct < 128)
+  {
+    text_eff(manmade, fct, nramp(fct, 100));
+  }
+  else if (fct < 256)
+  {
+    text_eff(manmade, 256-fct, 0);
+  }
+  else if (fct < 384)
+  {
+    text_eff(arduino, fct-256, 0);
+  }
+  else if (fct < 512)
+  {
+    text_eff(arduino, 512-fct, 0);
+  }
+  else if (fct < 1024)
+  {
+    plasma(1);
+  }
   fct++;
 
 }
