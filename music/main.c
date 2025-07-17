@@ -24,8 +24,8 @@ uint32_t j=0;
 uint8_t env1[32]={10, 30, 32, 40, 40, 40, 40, 40, 40, 30, 25, 22, 20, 19, 18, 17, 16, 0};
 uint8_t pattl = 64;
 uint8_t current_pattern = 0;
-uint8_t num_patterns = 13;
-uint8_t patt[num_patterns] = {0,0,1,1,2,1,3,2,4,5,0,6,2};
+#define NUM_PATTERNS 13
+uint8_t patt[NUM_PATTERNS] = {0,0,1,1,2,1,3,2,4,5,0,6,2};
 
 uint8_t par = 0;
 
@@ -138,7 +138,7 @@ void dds()
     i++;
     if (i % pattl == 0) {
         current_pattern++;
-        current_pattern = current_pattern % num_patterns;
+        current_pattern = current_pattern % NUM_PATTERNS;
         i = patt[current_pattern] * pattl;
     }
     int16_t main_note = pgm_read_word(&notes[i][0]);
