@@ -8,9 +8,9 @@
 #include <avr/wdt.h>
 #include <avr/power.h>
 
-#define TONE_LENGTH 2200
-#define GAP1 800
-#define GAP2 200
+#define TONE_LENGTH 1980
+#define GAP1 1200
+#define GAP2 500
 
 #include "notes___.h"
 
@@ -84,8 +84,8 @@ void dds()
   }
   //x=((dds1>>(31)) ^ (dds1>>29)) & 1;
   //x=(dds1>>31)&1;
-  x=((dds1>>(31-6))>(j>>6));
-  y=(dds2>>31)&1;
+  x=((dds1>>(31-4))>(j>>6));
+  y=(dds2>>29)&1 + ((dds2>>30)&1)*3;
   //digitalWrite(SOUND_PIN1, x);
   //digitalWrite(SOUND_PIN2, y);
   //OCR0A=(x+y)*64+(i%2?random8()&63:0);
@@ -120,7 +120,7 @@ void dds()
 	//	PORTB &= ~(1<<PB1);
 	//}
 
-  OCR0A=x*60+y*40+z;
+  OCR0A=x*60+y*20+z;
   j++;
   if (j==TONE_LENGTH)
   {
