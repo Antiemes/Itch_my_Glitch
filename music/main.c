@@ -138,16 +138,17 @@ void dds()
 //          repeat = 0;
 //      }
 //    }
-//    if (pgm_read_word(&notes[i][0])==-1)
-//    {
-//      //Timer1.detachInterrupt();
-//      i=0;
-//    }
+    if (main_note == -1)
+    {
+      //Timer1.detachInterrupt();
+      i=0;
+      main_note = pgm_read_word(&notes[i][0]);
+    }
     uint32_t foo=pgm_read_word(&notes[i][0])*134213;
     if (main_note > 0)
     {
         dds1_add=foo;
-    } else if (main_note < 0) {
+    } else if (main_note == -2) {
         dds1_add=0;
     }
     //if (dds1_add==0)
