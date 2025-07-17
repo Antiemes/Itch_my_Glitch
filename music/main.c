@@ -8,7 +8,8 @@
 #include <avr/wdt.h>
 #include <avr/power.h>
 
-#define TONE_LENGTH 1980
+#define TONE_LENGTH1 2310
+#define TONE_LENGTH2 1650
 #define GAP1 900
 #define GAP2 100
 
@@ -21,6 +22,8 @@ uint8_t repeat = 0;
 uint32_t j=0;
 
 uint8_t env1[32]={10, 30, 32, 40, 40, 40, 40, 40, 40, 30, 25, 22, 20, 19, 18, 17, 16, 0};
+
+uint8_t par = 0;
 
 // -----------------------------
 // |          RAND             |
@@ -76,11 +79,11 @@ void dds()
   uint8_t x;
   uint8_t y;
   static uint8_t z;
-  if (j<TONE_LENGTH-GAP1)
+  if (j<TONE_LENGTH1-GAP1)
   {
     dds1+=dds1_add;
   }
-  if (j<TONE_LENGTH-GAP2)
+  if (j<TONE_LENGTH1-GAP2)
   {
   	dds2+=dds2_add;
   }
@@ -96,7 +99,7 @@ void dds()
     //if (j<2000 && !((j>>1) & (1<<(noise&7))))
     if (j<2000 && !((j<<1) & (1<<(noise&7))))
     {
-      z=(uint8_t)((uint16_t)((TONE_LENGTH-j)*random8())>>9);
+      z=(uint8_t)((uint16_t)((TONE_LENGTH1-j)*random8())>>9);
     }
   }
   else
@@ -124,8 +127,9 @@ void dds()
 
   OCR0A=x*env1[j>>6]+y*20+z;
   j++;
-  if (j==TONE_LENGTH)
+  if (par == 0 && j==TONE_LENGTH1 || par == 1 && j==TONE_LENGTH2)
   {
+    par = 1 - par;
     j=0;
     i++;
     int16_t main_note = pgm_read_word(&notes[i][0]);
