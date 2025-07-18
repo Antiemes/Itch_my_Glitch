@@ -1,7 +1,17 @@
 #include <avr/pgmspace.h>
 
-#include "../../gfx/manmade.h"
-#include "../../gfx/arduino.h"
+#include "../../gfx/gfx_this.h"
+#include "../../gfx/gfx_no.h"
+#include "../../gfx/gfx_d.h"
+#include "../../gfx/gfx_get.h"
+#include "../../gfx/gfx_start.h"
+
+#include "../../gfx/gfx_ohno.h"
+#include "../../gfx/gfx_plasma.h"
+#include "../../gfx/gfx_blob.h"
+#include "../../gfx/gfx_plasmaback.h"
+#include "../../gfx/gfx_never.h"
+
 
 #define PLASMA_LEN 600
 
@@ -295,11 +305,10 @@ unsigned char temp[8];
 // -----------------------------
 // |          PLASMA           |
 // -----------------------------
-void plasma(uint8_t ver)
+void plasma(uint8_t ver, uint16_t pos, uint16_t len)
 {
   static uint16_t psp=0;
-  static uint8_t pbias=255;
-  static uint8_t pbias2=0;
+  uint8_t pbias = 0;
   static uint8_t a=0;
   int16_t x, y;
   int16_t v1, v2;
@@ -309,6 +318,15 @@ void plasma(uint8_t ver)
   int16_t x2, x3, y2, y3;
 
   uint8_t temp[8];
+
+  if (pos < 51)
+  {
+    pbias = (51 - pos) * 5;
+  }
+  else if (pos > (len - 51))
+  {
+    pbias = (51 - len + pos) * 5;
+  }
 
 /*
   memset(temp, ucData, 8);
@@ -369,7 +387,7 @@ void plasma(uint8_t ver)
       {
         v1=255;
       }
-      v1-=pbias2;
+      //v1-=pbias2;
       if (v1<0)
       {
         v1=0;
@@ -378,7 +396,7 @@ void plasma(uint8_t ver)
       {
         v2=255;
       }
-      v2-=pbias2;
+      //v2-=pbias2;
       if (v2<0)
       {
         v2=0;
@@ -412,14 +430,14 @@ void plasma(uint8_t ver)
   }
   psp++;
   a++;
-  if (psp<85)
-  {
-    pbias-=3;
-  }
-  else if (psp>(PLASMA_LEN-255/3) && pbias2<255)
-  {
-    pbias2+=3;
-  }
+  //if (psp<85)
+  //{
+  //  pbias-=3;
+  //}
+  //else if (psp>(PLASMA_LEN-255/3) && pbias2<255)
+  //{
+  //  pbias2+=3;
+  //}
 }
 
 void setup()
@@ -528,6 +546,7 @@ void wtf2()
 {
   uint8_t x, ym;
   uint8_t a, b;
+  static uint16_t psp = 0;
 
   for (ym=0; ym<4; ym++)
   {
@@ -548,7 +567,7 @@ void wtf2()
         uint16_t dsq = (x - 63) * (x - 63) + (y - 31) * (y - 31);
         //uint16_t dsq = (x - 30) * (x - 30) + (y - 14) * (y - 14)
         //            + (x - 97) * (x - 97) + (y - 48) * (y - 48);
-        uint8_t dd = dsq % (fct + 20);
+        uint8_t dd = dsq % (psp + 20);
         if (dd < 10)
         {
           a |= (1 << ys);
@@ -561,6 +580,7 @@ void wtf2()
       oledWriteDataBlock(&b, 1);
     }
   }
+  psp++;
 }
 
 inline uint8_t invsqr(uint16_t x)
@@ -681,16 +701,14 @@ int ramp(int x, int s)
   }
 }
 
-int nramp(int x, int e)
+uint16_t ramp(uint16_t pos, uint16_t b, uint16_t e)
 {
-  if (x > e)
-  {
-    return 0;
-  }
-  else
-  {
-    return e - x;
-  }
+  return 255*(pos - b)/(e - b);
+}
+
+uint16_t nramp(uint16_t pos, uint16_t b, uint16_t e)
+{
+  return 255-255*(pos - b)/(e - b);
 }
 
 uint16_t nem_ctr = 0;
@@ -748,26 +766,152 @@ void loop()
 //    blob();
 //    wtf2();
 //  plasma(0);
-  if (fct < 128)
+//  if (fct < 128)
+//  {
+//    text_eff(gfx_a, ramp(fct, 0, 128), nramp(fct, 0, 128));
+//  }
+//  else if (fct < 256)
+//  {
+//    text_eff(gfx_a, nramp(fct, 128, 256), 0);
+//  }
+//
+//  else if (fct < 384)
+//  {
+//    text_eff(gfx_b, ramp(fct, 256, 384), nramp(fct, 256, 384));
+//  }
+//  else if (fct < 512)
+//  {
+//    text_eff(gfx_b, nramp(fct, 384, 512), 0);
+//  }
+//
+//  else if (fct < 1024)
+//  {
+//    wtf2();
+//  }
+//
+//  else if (fct < 1152)
+//  {
+//    text_eff(gfx_d, ramp(fct, 1024, 1152), nramp(fct, 0, 128) / 4);
+//  }
+//  else if (fct < 1280)
+//  {
+//    text_eff(gfx_d, nramp(fct, 1152, 1280), 0);
+//  }
+//
+//  else if (fct < 1792)
+//  {
+//    plasma(0, 512, fct - 1280);
+//  }
+//
+//
+  if (fct < 16)
   {
-    text_eff(manmade, fct, nramp(fct, 100));
+    wtf2();
   }
-  else if (fct < 256)
+
+  else if (fct < 80)
   {
-    text_eff(manmade, 256-fct, 0);
+    text_eff(gfx_this, ramp(fct, 16, 80), nramp(fct, 16, 80));
   }
+  else if (fct < 144)
+  {
+    text_eff(gfx_this, nramp(fct, 80, 144), 0);
+  }
+  
+  else if (fct < 160)
+  {
+    wtf2();
+  }
+
+  else if (fct < 224)
+  {
+    text_eff(gfx_no, ramp(fct, 160, 224), nramp(fct, 160, 224));
+  }
+  else if (fct < 288)
+  {
+    text_eff(gfx_no, nramp(fct, 224, 288), 0);
+  }
+
+  else if (fct < 304)
+  {
+    wtf2();
+  }
+
+  else if (fct < 336)
+  {
+    text_eff(gfx_d, ramp(fct, 304, 336), nramp(fct, 304, 336));
+  }
+  else if (fct < 368)
+  {
+    text_eff(gfx_d, nramp(fct, 336, 368), 0);
+  }
+
   else if (fct < 384)
   {
-    text_eff(arduino, fct-256, 0);
+    wtf2();
   }
-  else if (fct < 512)
+  
+  else if (fct < 416)
   {
-    text_eff(arduino, 512-fct, 0);
+    text_eff(gfx_get, ramp(fct, 384, 416), nramp(fct, 384, 416));
   }
-  else if (fct < 1024)
+  else if (fct < 448)
   {
-    plasma(1);
+    text_eff(gfx_get, nramp(fct, 416, 448), 0);
   }
+
+  else if (fct < 464)
+  {
+    wtf2();
+  }
+
+  else if (fct < 496)
+  {
+    text_eff(gfx_start, ramp(fct, 464, 496), nramp(fct, 464, 496));
+  }
+  else if (fct < 528)
+  {
+    text_eff(gfx_start, nramp(fct, 496, 528), 0);
+  }
+
+  else if (fct < 1040)
+  {
+    plasma(1, fct-528, 512);
+  }
+
+  else if (fct < 1072)
+  {
+    text_eff(gfx_ohno, ramp(fct, 1040, 1072), nramp(fct, 1040, 1072));
+  }
+  else if (fct < 1104)
+  {
+    text_eff(gfx_ohno, nramp(fct, 1072, 1104), 0);
+  }
+  else if (fct < 1136)
+  {
+    text_eff(gfx_plasma, ramp(fct, 1072, 1136), nramp(fct, 1072, 1136));
+  }
+  else if (fct < 1168)
+  {
+    text_eff(gfx_plasma, nramp(fct, 1136, 1168), 0);
+  }
+  else if (fct < 1200)
+  {
+    text_eff(gfx_blob, ramp(fct, 1136, 1200), nramp(fct, 1136, 1200));
+  }
+  else if (fct < 1232)
+  {
+    text_eff(gfx_blob, nramp(fct, 1200, 1230), 0);
+  }
+  
+ //plasmaback, never 
+
+  else
+  {
+    blob();
+  }
+  
+
   fct++;
 
 }
