@@ -22,6 +22,7 @@ uint8_t repeat = 0;
 uint32_t j=0;
 
 uint8_t env1[32]={10, 30, 32, 40, 40, 40, 40, 40, 40, 30, 25, 22, 20, 19, 18, 17, 16, 0};
+uint8_t env2[37]={6,18,16,15,14,13,12,11,10,10, 10,10,10,10,10,10,10,10,10,10, 10,10,10,10,10,10,10,10,10,10, 8,7,6,5,3,1,0};
 uint8_t pattl = 64;
 uint8_t current_pattern = 0;
 #define NUM_PATTERNS 13
@@ -129,7 +130,7 @@ void dds()
 	//	PORTB &= ~(1<<PB1);
 	//}
 
-  OCR0A=x*env1[j>>6]+y*20+z;
+  OCR0A=x*env1[j>>6]+y*env2[j>>6]+z;
   j++;
   if (par == 0 && j==TONE_LENGTH1 || par == 1 && j==TONE_LENGTH2)
   {
