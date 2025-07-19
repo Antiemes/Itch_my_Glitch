@@ -613,7 +613,10 @@ void blob()
 #define TH2 (72-5)
 #define TH3 (72+5)
 #define TH4 88
-  uint8_t x1 = 30, y1 = 6, x2 = fct & 127, y2 = 40;
+  uint8_t x1 = fc(fct & 127) / 2 + 63;
+  uint8_t y1 = fs(fct & 127) / 2 + 63;
+  uint8_t x2 = fs((fct * 3 / 2) & 127) / 2 + 63;
+  uint8_t y2 = -fc((fct * 5 / 4) & 127) / 2 + 63;
 
   uint8_t x, ym;
   uint8_t buf[16];
@@ -687,6 +690,7 @@ void blob()
       oledWriteDataBlock(buf, 4);
     }
   }
+
 }
 
 int ramp(int x, int s)
@@ -876,7 +880,7 @@ void loop()
 
   else if (fct < 1040)
   {
-    plasma(1, fct-528, 512);
+    plasma(0, fct-528, 512);
   }
 
   else if (fct < 1072)
@@ -906,10 +910,60 @@ void loop()
   
  //plasmaback, never 
 
-  else
+  else if (fct < 3488)
   {
     blob();
   }
+  
+  else if (fct < 3520)
+  {
+    text_eff(gfx_plasmaback, ramp(fct, 3448, 3520), nramp(fct, 3448, 3520));
+  }
+  else if (fct < 3552)
+  {
+    text_eff(gfx_plasmaback, nramp(fct, 3520, 3552), 0);
+  }
+
+  else if (fct < 4064)
+  {
+    plasma(1, fct-3552, 512);
+  }
+
+  else if (fct < 4096)
+  {
+    text_eff(gfx_never, ramp(fct, 4064, 4096), nramp(fct, 4064, 4096));
+  }
+  else if (fct < 4128)
+  {
+    text_eff(gfx_never, nramp(fct, 4096, 4128), 0);
+  }
+
+  else if (fct < 4640)
+  {
+    plasma(2, fct-4128, 512);
+  }
+
+  else
+  {
+    uint16_t fff = fct - 4640;
+    if (fff < 512)
+    {
+      plasma(1, fff, 512);
+    }
+    else if (fff < 544)
+    {
+      text_eff(gfx_d, ramp(fff, 512, 544), nramp(fff, 512, 544));
+    }
+    else if (fff < 576)
+    {
+      text_eff(gfx_d, nramp(fff, 544, 576), 0);
+    }
+    else
+    {
+      fct = 4640;
+    }
+  }
+  
   
 
   fct++;
