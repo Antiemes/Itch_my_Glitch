@@ -102,7 +102,7 @@ void dds()
   if (noise & 0x08)
   {
     //if (j<2000 && !((j>>1) & (1<<(noise&7))))
-    if (j<2000 && !((j<<1) & (1<<(noise&7))))
+    if (j<((noise & 0xf0) << 3) && !((j<<1) & (1<<(noise&7))))
     {
       z=(uint8_t)((uint16_t)((TONE_LENGTH1-j)*random8())>>9);
     }
